@@ -11,10 +11,10 @@ $ npm install cortex-handlebars-compiler --save
 ## Usage
 
 ```js
-var cortex_handlebars_compiler = require('cortex-handlebars-compiler');
+var compiler = require('cortex-handlebars-compiler');
 ```
 
-## Licence
+## License
 
 MIT
 <!-- do not want to make nodeinit to complicated, you can edit this whenever you want. -->
