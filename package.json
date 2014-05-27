@@ -1,7 +1,7 @@
 {
   "name": "cortex-handlebars-compiler",
-  "version": "0.1.0",
-  "description": "cortex-handlebars-compiler",
+  "version": "0.1.1",
+  "description": "Handlebar helpers for cortex template.",
   "main": "index.js",
   "scripts": {
     "test": "make test"
@@ -11,9 +11,13 @@
     "url": "git://github.com/cortexjs/cortex-handlebars-compiler.git"
   },
   "keywords": [
-    "cortex-handlebars-compiler"
+    "cortex",
+    "handlebars",
+    "template",
+    "compiler",
+    "tags"
   ],
-  "engines": { 
+  "engines": {
     "node": ">=0.11.0"
   },
   "author": "kael",
@@ -23,6 +27,12 @@
   },
   "devDependencies": {
     "mocha": "*",
-    "chai": "*"
+    "chai": "*",
+    "jsonfile": "~1.1.1"
+  },
+  "dependencies": {
+    "handlebars": "^2.0.0-alpha.4",
+    "shrinked": "^0.1.2",
+    "neuron-hashmaps": "^1.0.0"
   }
 }

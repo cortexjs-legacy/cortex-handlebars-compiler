@@ -35,6 +35,7 @@ function Compiler (options) {
 // - options
 Compiler.prototype.register = function(helper, handler) {
   handlebars.registerHelper(helper, handler);
+  return this;
 };
 
 
