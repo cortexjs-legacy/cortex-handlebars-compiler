@@ -86,6 +86,7 @@ Compiler.prototype._neuron_config = function() {
     'neuron.config({',
       'ranges:'  + JSON.stringify(this.neuron_hashmaps.ranges) + ',',
       'depTree:' + JSON.stringify(this.neuron_hashmaps.depTree) + ',',
+      'path:"' + this.root + '"',
     '});',
     '</script>'
   ].join('');
