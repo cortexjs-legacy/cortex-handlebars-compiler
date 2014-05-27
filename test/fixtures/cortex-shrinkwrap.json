@@ -1,0 +1,16 @@
+{
+  "name": "cortex-hybrid-sample",
+  "version": "0.1.0",
+  "engines": {
+    "neuron": {
+      "from": "neuron@*",
+      "version": "5.1.0"
+    }
+  },
+  "dependencies": {
+    "jquery": {
+      "from": "jquery@~1.9.2",
+      "version": "1.9.2"
+    }
+  }
+}

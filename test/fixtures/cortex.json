@@ -1,0 +1,39 @@
+{
+  "name": "cortex-hybrid-sample",
+  "version": "0.1.0",
+  "description": "Cortex sample project for hybrid applications",
+  "main": "index.js",
+  "repository": "https://github.com/cortexjs/cortex-hybrid-sample",
+  "keywords": [
+    "cortex",
+    "sample",
+    "project",
+    "hybrid"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "kael",
+    "email": "i@kael.me"
+  },
+  "bugs": {
+    "url": "https://github.com/cortexjs/cortex-hybrid-sample/issues"
+  },
+  "homepage": "https://github.com/cortexjs/cortex-hybrid-sample",
+  "directories": {
+    "template": "template",
+    "css": "css"
+  },
+  "engines": {
+    "neuron": "~5.0.0"
+  },
+  "devDependencies": {
+    "neuron": "*",
+    "assert": "*"
+  },
+  "scripts": {
+    "prebuild": "./node_modules/.bin/gulp"
+  },
+  "dependencies": {
+    "jquery": "~1.9.2"
+  }
+}
