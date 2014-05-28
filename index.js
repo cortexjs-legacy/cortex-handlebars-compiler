@@ -56,7 +56,7 @@ Compiler.prototype._facade_handler = function(title, options) {
   output += [
     '<script>',
       'facade({',
-        "mod:'" + this._facade_mod(title) + "'",
+        'mod:"' + this._facade_mod(title) + '"',
       '});',
     '</script>'
   ].join('');
