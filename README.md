@@ -30,7 +30,55 @@ Returns the `compiler.Compiler` instance.
 
 - template `String` template string
 
-Parses the template string and returns the parsed function.
+Parses the template string and returns `function(data)` the parsed function.
+
+template:
+```
+<body>
+{{{facade 'a@1.0.0'}}}
+</body>
+```
+
+```js
+instance.compile(template)();
+```
+
+Then you will get: (which is beautified)
+
+```html
+<html>
+<head></head>
+<body>
+
+<script src="../../../neuron/5.1.0/neuron.min.js"></script>
+<script>
+neuron.config({
+  ranges: {
+    "jquery": {
+      "~1.9.2": "1.9.2"
+    },
+    "neuron": {
+      "latest": "5.1.0"
+    }
+  },
+  depTree: {
+    "cortex-hybrid-sample": {
+      "0.1.0": [{
+        "jquery": "~1.9.2"
+      }, {}]
+    }
+  },
+  path: "../../../"
+});
+</script>
+<script>
+facade({
+  mod:"cortex-hybrid-sample@0.1.0"
+});
+</script>
+</body>
+</html>
+```
 
 ### .register(helper, handler)
 
