@@ -103,7 +103,7 @@ Compiler.prototype._facade_mod = function(title) {
   // 'a' -> 'a@latest'
   obj.range = obj.range || 'latest';
 
-  var is_range_valid = semver.validRange(obj.range) || range === 'latest';
+  var is_range_valid = semver.validRange(obj.range) || obj.range === 'latest';
 
   var facade_pkg = pkg.format({
     name: obj.name,
