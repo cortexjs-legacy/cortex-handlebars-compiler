@@ -5,6 +5,8 @@ module.exports = compiler;
 var handlebars = require('handlebars');
 var hashmaps = require('neuron-hashmaps');
 var node_path = require('path');
+var semver = require('semver');
+var pkg = require('neuron-pkg');
 
 function compiler (options) {
   return new Compiler(options);
@@ -54,12 +56,80 @@ Compiler.prototype._facade_handler = function(title, options) {
   output += [
     '<script>',
       'facade({',
-        "mod:'" + title + "'",
+        "mod:'" + this._facade_mod(title) + "'",
       '});',
     '</script>'
   ].join('');
 
   return output;
+};
+
+
+// Suppose current package:
+// name: foo
+// version: 0.2.0
+// Then,
+// 1.
+// facade(foo) -> facade(foo@0.2.0)
+// 2.
+// facade() -> facade(foo@0.2.0)
+// 3.
+// facade(foo/abc) -> facade(foo@0.2.0/abc)
+// 4.
+// facade(foo@1.2.3) -> check if 1.2.3 exists in current shrinkwrap, otherwise -> throw
+Compiler.prototype._facade_mod = function(title) {
+  var name = this.pkg.name;
+  var version = this.pkg.version;
+
+  // facade() -> current package
+  if (!title || Object(title) === title) {
+    return pkg.format({
+      name: name,
+      version: version
+    });
+  }
+
+  var obj = pkg(title);
+
+  // if the facade uses the current package, force the version
+  if (obj.name === name) {
+    obj.version = version;
+  }
+
+  if (obj.version) {
+    return pkg.format(obj);
+  }
+
+  // 'a' -> 'a@latest'
+  obj.range = obj.range || 'latest';
+
+  var is_range_valid = semver.validRange(obj.range) || range === 'latest';
+
+  var facade_pkg = pkg.format({
+    name: obj.name,
+    range: obj.range
+  });
+
+  if (!is_range_valid) {
+    throw new Error(
+      'Facade: invalid version "' + facade_pkg + '", make sure you have install it.\n' +
+      'Or you might as well specify the explicit version of "' + facade_name + '".'
+    );
+  }
+
+  // parse ranges
+  obj.version = this._parse_range(obj.name, obj.range);
+  if (!obj.version) {
+    throw new Error('Facade: invalid range "' + facade_pkg + '", make sure your have `cortex install --save` it.');
+  }
+
+  return pkg.format(obj);
+};
+
+
+Compiler.prototype._parse_range = function(name, range) {
+  var ranges = this.neuron_hashmaps.ranges;
+  return ranges[name] && ranges[name][range];
 };
 
 
