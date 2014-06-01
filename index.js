@@ -9,25 +9,46 @@ var semver = require('semver');
 var pkg = require('neuron-pkg');
 
 function compiler (options) {
-  return new Compiler(options);
+  return new Compiler(options || {});
 }
 
 // @param {Object} options
-// - shrinkWrap {Object}
-// - pkg {Object}
-// - root {path} root directory of packages
+// - pkg `Object` object of cortex.json
+// - shrinkWrap `Object` object of cortex-shrinkwrap.json
+// - cwd `path` the root directories of current project.
+// - path `path` path of the current template file
+// X - built_root `path` the root directories of packages to be built into
+// - ext `String='.js'` the extension of module files, default to `'.js'`
 function Compiler (options) {
   this.facade_counter = 0;
-  this.neuron_hashmaps = hashmaps(options.shrinkWrap);
-  this.pkg = options.pkg;
-  this.root = options.root;
+
+  this._check_option(options, 'pkg');
+  this._check_option(options, 'shrinkWrap');
+  this._check_option(options, 'cwd');
+  this._check_option(options, 'path');
+  this._check_option(options, 'built_root');
   this.ext = options.ext || '.js';
 
-  this.register('facade', function (title, helper_options) {
-    return this._facade_handler(title, helper_options);
+  this.cwd = node_path.resolve(this.cwd);
+  this.path = node_path.resolve(this.cwd, this.path);
+  // this.built_root = node_path.resolve(this.cwd, this.built_root);
 
-  }.bind(this));
+  this.neuron_hashmaps = hashmaps(options.shrinkWrap);
+
+  this.register('facade', this._facade_handler, this);
+  this.register('href', this._href_handler, this);
 }
+
+
+Compiler.prototype._check_option = function(options, key, message) {
+  if (!message) {
+    message = '`options.' + key + '` must be specified';
+  }
+  if (!options[key]) {
+    throw new Error(message);
+  }
+  this[key] = options[key];
+};
 
 
 // Register a custom helper
@@ -35,7 +56,10 @@ function Compiler (options) {
 // @param {function(title, options)} handler
 // - title
 // - options
-Compiler.prototype.register = function(helper, handler) {
+Compiler.prototype.register = function(helper, handler, context) {
+  if (context) {
+    handler = handler.bind(context);
+  }
   handlebars.registerHelper(helper, handler);
   return this;
 };
@@ -44,6 +68,20 @@ Compiler.prototype.register = function(helper, handler) {
 // Comple the template
 Compiler.prototype.compile = function(template) {
   return handlebars.compile(template);
+};
+
+
+Compiler.prototype._config_path = function() {
+  // built_root/
+  //          |-- <name>
+  //                  |-- <version>
+  //                              |-- dir/to/template
+  //                                                |-- <path.basename>
+  // ------------------------------------------------------------------
+  //                              |         |
+  var dir = node_path.dirname(this.path);
+  var relative_to_cwd = node_path.relative(dir, this.cwd);
+  return node_path.join('..', '..', relative_to_cwd);
 };
 
 
@@ -62,6 +100,14 @@ Compiler.prototype._facade_handler = function(title, options) {
   ].join('');
 
   return output;
+};
+
+
+// a.html
+// {{href ./b.html}}
+// {{href b/b.html}}
+Compiler.prototype._href_handler = function(title, options) {
+  html
 };
 
 
@@ -156,7 +202,7 @@ Compiler.prototype._neuron_config = function() {
     'neuron.config({',
       'ranges:'  + JSON.stringify(this.neuron_hashmaps.ranges) + ',',
       'depTree:' + JSON.stringify(this.neuron_hashmaps.depTree) + ',',
-      'path:"' + this.root + '"',
+      'path:"' + this._config_path() + '"',
     '});',
     '</script>'
   ].join('');
