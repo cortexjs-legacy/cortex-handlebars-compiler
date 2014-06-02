@@ -35,6 +35,10 @@ function Compiler (options) {
   this.ext = options.ext || '.js';
   this.href_root = options.href_root;
 
+  if (this.href_root) {
+    this.href_root = this.href_root.replace(/\/+$/, '');
+  }
+
   this.cwd = node_path.resolve(this.cwd);
   this.path = node_path.resolve(this.cwd, this.path);
 
@@ -45,8 +49,8 @@ function Compiler (options) {
   //                                                |-- <path.basename>
   // ------------------------------------------------------------------
   //                              |      to_cwd     |
-  var template_dir = node_path.dirname(this.path);
-  var to_cwd = node_path.relative(template_dir, this.cwd);
+  this.dir = node_path.dirname(this.path);
+  var to_cwd = node_path.relative(this.dir, this.cwd);
   this.relative_cwd = node_path.join('..', '..', to_cwd);
 
   this.neuron_hashmaps = hashmaps(options.shrinkWrap);
@@ -117,7 +121,7 @@ Compiler.prototype._facade_handler = function(title, options) {
 // {{href ./b.html}}
 // {{href b/b.html}}
 Compiler.prototype._href_handler = function(title, options) {
-  var link = title; console.log(arguments);
+  var link = title;
   if (!link) {
     throw new Error('invalid argument for helper `href`.');
   }
@@ -148,8 +152,13 @@ Compiler.prototype._is_parent_path = function(path) {
 
 // TODO: -> config
 Compiler.prototype._hybrid_href = function(title) {
-  var name = this.pkg.name;
-  var link_relative = node_path.join(this.relative_cwd, title);
+  // 'b/b.html' -> 'efte://efte/b/b.html'
+  if (!this._is_relative(title)) {
+    return this.href_root + '/' + title;
+  }
+
+  var link_to = node_path.join(this.dir, title);
+  var link_relative = node_path.relative(this.cwd, link_to);
   // dir: 'template/'
   // title: '../../b.html'
   // -> allow to use a resource outside current repo? NO!
@@ -159,7 +168,8 @@ Compiler.prototype._hybrid_href = function(title) {
     throw new Error('You should never link to a resource outside current project.');
   }
 
-  return node_url.resolve(this.href_root, link_relative);
+  var name = this.pkg.name;
+  return [this.href_root, name, link_relative].join('/');
 };
 
 
