@@ -27,8 +27,8 @@ A single compiler instance only cares about one template file.
   - shrinkWrap `Object` object of cortex-shrinkwrap.json
   - cwd `path` the root directories of current project.
   - path `path` path of the current template file
-  <!-- - built_root `path` the root directories of packages to be built into -->
   - ext `String='.js'` the extension of module files, default to `'.js'`
+  - href_root `url` the url base of the hyper reference, `'efte://efte'` for example.
 
 ### .compile(template)
 
@@ -99,7 +99,32 @@ Returns `this`.
 
 The first 'facade' will also output the engines and configurations.
 
+### `{{{href '<link>'}}}`
+
+Creates a special link to navigate through business units
+
+#### link
+
+Relative links: `./page.html`
+
+External link to other units: `<unit-name>/path/to.html`
+
+```html
+<!-- 
+  If the current unit is 'foo', 
+  and the current template is 'template/a.html'
+-->
+<a href="{{{href './b.html'}}}" >link</a>
+<a href="{{{href 'bar/folder/index.html'}}}">external link</a>
+```
+
+You will get:
+
+```html
+<a href="efte://efte/foo/template/a.html">link</a>
+<a href="efte://efte/bar/folder/index.html">external link</a>
+```
+
 ## License
 
 MIT
-<!-- do not want to make nodeinit to complicated, you can edit this whenever you want. -->
