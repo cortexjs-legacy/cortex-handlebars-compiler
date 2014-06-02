@@ -7,12 +7,17 @@ var hashmaps = require('neuron-hashmaps');
 var node_path = require('path');
 var semver = require('semver');
 var pkg = require('neuron-pkg');
+var node_url = require('url');
 
 function compiler (options) {
   return new Compiler(options || {});
 }
 
-// @param {Object} options
+// @param {Object} options basic information of the template, not userdata. 
+// Including:
+// - information of the template
+// - global configurations of the environment
+// Properties:
 // - pkg `Object` object of cortex.json
 // - shrinkWrap `Object` object of cortex-shrinkwrap.json
 // - cwd `path` the root directories of current project.
@@ -28,10 +33,10 @@ function Compiler (options) {
   this._check_option(options, 'path');
   this._check_option(options, 'built_root');
   this.ext = options.ext || '.js';
+  this.href_root = options.href_root;
 
   this.cwd = node_path.resolve(this.cwd);
   this.path = node_path.resolve(this.cwd, this.path);
-  // this.built_root = node_path.resolve(this.cwd, this.built_root);
 
   this.neuron_hashmaps = hashmaps(options.shrinkWrap);
 
@@ -107,7 +112,49 @@ Compiler.prototype._facade_handler = function(title, options) {
 // {{href ./b.html}}
 // {{href b/b.html}}
 Compiler.prototype._href_handler = function(title, options) {
-  html
+  var link = title;
+  if (!link) {
+    throw new Error('invalid argument for helper `href`.');
+  }
+
+  // './b.html'
+  // normal -> './b.html'
+  // hybrid -> 'protocol://efte/<name>/<relative>/b.html'
+  if (this.href_root) {
+    link = this._hybrid_href(title);
+  }
+};
+
+
+Compiler.prototype._is_relative = function(path) {
+  return path === '.'
+    || path.indexOf('./') === 0
+    || this._is_parent_path(path);
+};
+
+
+Compiler.prototype._is_parent_path = function(path) {
+  return path === '..'
+    || path.indexOf('../') === 0;
+};
+
+
+// TODO: -> config
+Compiler.prototype._hybrid_href = function(title) {
+  var name = this.pkg.name;
+  var template_relative = node_path.relative(this.cwd, this.path);
+  var dir_relative = node_path.dirname(template_relative);
+  var link_relative = node_path.join(dir_relative, title);
+  // dir: 'template/'
+  // title: '../../b.html'
+  // -> allow to use a resource outside current repo? NO!
+  // Then:
+  // title: '../template/../../b.html' ? NO!
+  if (this._is_parent_path(link_relative)) {
+    throw new Error('You should never link to a resource outside current project.');
+  }
+
+  return node_url.resolve(this.href_root, link_relative);
 };
 
 
@@ -136,7 +183,6 @@ Compiler.prototype._facade_mod = function(title) {
   }
 
   var obj = pkg(title);
-
   // if the facade uses the current package, force the version
   if (obj.name === name) {
     obj.version = version;
