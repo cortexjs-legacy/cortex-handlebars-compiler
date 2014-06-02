@@ -117,7 +117,7 @@ Compiler.prototype._facade_handler = function(title, options) {
 // {{href ./b.html}}
 // {{href b/b.html}}
 Compiler.prototype._href_handler = function(title, options) {
-  var link = title;
+  var link = title; console.log(arguments);
   if (!link) {
     throw new Error('invalid argument for helper `href`.');
   }
