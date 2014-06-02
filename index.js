@@ -31,15 +31,27 @@ function Compiler (options) {
   this._check_option(options, 'shrinkWrap');
   this._check_option(options, 'cwd');
   this._check_option(options, 'path');
-  this._check_option(options, 'built_root');
+  // this._check_option(options, 'built_root');
   this.ext = options.ext || '.js';
   this.href_root = options.href_root;
 
   this.cwd = node_path.resolve(this.cwd);
   this.path = node_path.resolve(this.cwd, this.path);
 
+  // built_root/
+  //          |-- <name>
+  //                  |-- <version>
+  //                              |-- dir/to/template
+  //                                                |-- <path.basename>
+  // ------------------------------------------------------------------
+  //                              |      to_cwd     |
+  var template_dir = node_path.dirname(this.path);
+  var to_cwd = node_path.relative(template_dir, this.cwd);
+  this.relative_cwd = node_path.join('..', '..', to_cwd);
+
   this.neuron_hashmaps = hashmaps(options.shrinkWrap);
 
+  this.helpers = {};
   this.register('facade', this._facade_handler, this);
   this.register('href', this._href_handler, this);
 }
@@ -65,28 +77,21 @@ Compiler.prototype.register = function(helper, handler, context) {
   if (context) {
     handler = handler.bind(context);
   }
-  handlebars.registerHelper(helper, handler);
+  this.helpers[helper] = handler;
   return this;
 };
 
 
 // Comple the template
 Compiler.prototype.compile = function(template) {
+  // `handlebars` is a singleton,
+  // we need to override helpers whenever we execute `handlebars.compile` 
+  Object.keys(this.helpers).forEach(function (helper) {
+    var handler = this.helpers[helper];
+    handlebars.registerHelper(helper, handler);
+  }, this);
+
   return handlebars.compile(template);
-};
-
-
-Compiler.prototype._config_path = function() {
-  // built_root/
-  //          |-- <name>
-  //                  |-- <version>
-  //                              |-- dir/to/template
-  //                                                |-- <path.basename>
-  // ------------------------------------------------------------------
-  //                              |         |
-  var dir = node_path.dirname(this.path);
-  var relative_to_cwd = node_path.relative(dir, this.cwd);
-  return node_path.join('..', '..', relative_to_cwd);
 };
 
 
@@ -123,6 +128,8 @@ Compiler.prototype._href_handler = function(title, options) {
   if (this.href_root) {
     link = this._hybrid_href(title);
   }
+
+  return link;
 };
 
 
@@ -142,9 +149,7 @@ Compiler.prototype._is_parent_path = function(path) {
 // TODO: -> config
 Compiler.prototype._hybrid_href = function(title) {
   var name = this.pkg.name;
-  var template_relative = node_path.relative(this.cwd, this.path);
-  var dir_relative = node_path.dirname(template_relative);
-  var link_relative = node_path.join(dir_relative, title);
+  var link_relative = node_path.join(this.relative_cwd, title);
   // dir: 'template/'
   // title: '../../b.html'
   // -> allow to use a resource outside current repo? NO!
@@ -248,7 +253,7 @@ Compiler.prototype._neuron_config = function() {
     'neuron.config({',
       'ranges:'  + JSON.stringify(this.neuron_hashmaps.ranges) + ',',
       'depTree:' + JSON.stringify(this.neuron_hashmaps.depTree) + ',',
-      'path:"' + this._config_path() + '"',
+      'path:"' + this.relative_cwd + '"',
     '});',
     '</script>'
   ].join('');
@@ -256,5 +261,5 @@ Compiler.prototype._neuron_config = function() {
 
 
 Compiler.prototype._normalize = function(name, version) {
-  return node_path.join(this.root, name, version, name + this.ext);
+  return node_path.join(this.relative_cwd, name, version, name + this.ext);
 };
