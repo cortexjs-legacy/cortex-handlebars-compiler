@@ -22,7 +22,8 @@ describe("compiler()", function(){
       name: 'folder/normal'
     },
     {
-      name: 'more'
+      name: 'more',
+      js_ext: '.min.js'
     },
     {
       name: 'range-not-found',
@@ -39,14 +40,14 @@ describe("compiler()", function(){
     var template_file = node_path.join(fixtures, c.name + '.template');
     var template = fs.readFileSync(template_file).toString();
 
-    it(template, function(){
+    it(c.name + ': ' + template, function(){
       var cp = compiler({
         pkg: pkg,
         shrinkWrap: shrinkwrap,
         cwd: fixtures,
         path: template_file,
         href_root: c.href_root,
-        ext: '.min.js'
+        js_ext: c.js_ext
       });
 
       var compiled;

@@ -32,7 +32,7 @@ function Compiler (options) {
   this._check_option(options, 'cwd');
   this._check_option(options, 'path');
   // this._check_option(options, 'built_root');
-  this.ext = options.ext || '.js';
+  this.js_ext = options.js_ext || '.js';
   this.href_root = options.href_root;
 
   if (this.href_root) {
@@ -261,9 +261,10 @@ Compiler.prototype._neuron_config = function() {
   return '' + [
     '<script>',
     'neuron.config({',
-      'ranges:'  + JSON.stringify(this.neuron_hashmaps.ranges) + ',',
+      'ranges:'  + JSON.stringify(this.neuron_hashmaps.ranges)  + ',',
       'depTree:' + JSON.stringify(this.neuron_hashmaps.depTree) + ',',
-      'path:"' + this.relative_cwd + '"',
+      'path:"' + this.relative_cwd + '"'                        + ',',
+      'ext:"' + this.js_ext + '"',
     '});',
     '</script>'
   ].join('');
@@ -271,5 +272,5 @@ Compiler.prototype._neuron_config = function() {
 
 
 Compiler.prototype._normalize = function(name, version) {
-  return node_path.join(this.relative_cwd, name, version, name + this.ext);
+  return node_path.join(this.relative_cwd, name, version, name + this.js_ext);
 };
