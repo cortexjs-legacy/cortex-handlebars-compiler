@@ -20,10 +20,14 @@ Returns the `compiler.Compiler` instance.
 
 ## Class: compiler.Compiler(options)
 
+A single compiler instance only cares about one template file.
+
 - options `Object`
   - pkg `Object` object of cortex.json
-  - root `path` the root directories of packages
   - shrinkWrap `Object` object of cortex-shrinkwrap.json
+  - cwd `path` the root directories of current project.
+  - path `path` path of the current template file
+  <!-- - built_root `path` the root directories of packages to be built into -->
   - ext `String='.js'` the extension of module files, default to `'.js'`
 
 ### .compile(template)
