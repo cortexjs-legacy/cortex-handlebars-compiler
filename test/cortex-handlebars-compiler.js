@@ -5,6 +5,7 @@ var compiler = require('../');
 var fs = require('fs');
 var jf = require('jsonfile');
 var node_path = require('path');
+var _ = require('underscore');
 
 var fixtures = node_path.join(__dirname, 'fixtures');
 var cortex_json = node_path.join(fixtures, 'cortex.json');
@@ -23,7 +24,9 @@ describe("compiler()", function(){
     },
     {
       name: 'more',
-      js_ext: '.min.js'
+      o: {
+        js_ext: '.min.js'
+      }
     },
     {
       name: 'range-not-found',
@@ -34,21 +37,32 @@ describe("compiler()", function(){
     },
     {
       name: 'href-root',
-      href_root: 'efte://efte'
+      o: {
+        href_root: 'efte://efte'
+      }
+    },
+    {
+      name: 'static',
+      o: {
+        css_ext: '.min.css'
+      }
     }
   ].forEach(function (c) {
     var template_file = node_path.join(fixtures, c.name + '.template');
     var template = fs.readFileSync(template_file).toString();
+    var options = {
+      pkg: pkg,
+      shrinkWrap: shrinkwrap,
+      cwd: fixtures,
+      path: template_file
+    };
+
+    if (c.o) {
+      _.extend(options, c.o);
+    }
 
     it(c.name + ': ' + template, function(){
-      var cp = compiler({
-        pkg: pkg,
-        shrinkWrap: shrinkwrap,
-        cwd: fixtures,
-        path: template_file,
-        href_root: c.href_root,
-        js_ext: c.js_ext
-      });
+      var cp = compiler(options);
 
       var compiled;
       var error;

@@ -1,6 +1,6 @@
 {
   "name": "cortex-handlebars-compiler",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Handlebar helpers for cortex template.",
   "main": "index.js",
   "scripts": {
@@ -28,7 +28,8 @@
   "devDependencies": {
     "mocha": "*",
     "chai": "*",
-    "jsonfile": "~1.1.1"
+    "jsonfile": "~1.1.1",
+    "underscore": "~1.6.0"
   },
   "dependencies": {
     "handlebars": "^2.0.0-alpha.4",
