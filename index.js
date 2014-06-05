@@ -31,8 +31,12 @@ function Compiler (options) {
   this._check_option(options, 'shrinkWrap');
   this._check_option(options, 'cwd');
   this._check_option(options, 'path');
-  // this._check_option(options, 'built_root');
-  this.js_ext = options.js_ext || '.js';
+
+  this.ext = {
+    js: options.js_ext || '.js',
+    css: options.css_ext || '.css'
+  };
+
   this.href_root = options.href_root;
 
   if (this.href_root) {
@@ -58,6 +62,7 @@ function Compiler (options) {
   this.helpers = {};
   this.register('facade', this._facade_handler, this);
   this.register('href', this._href_handler, this);
+  this.register('static', this._static_handler, this);
 }
 
 
@@ -134,6 +139,22 @@ Compiler.prototype._href_handler = function(title, options) {
   }
 
   return link;
+};
+
+
+Compiler.prototype._static_handler = function(title, options) {
+  var ext = node_path.extname(title);
+  var dir = node_path.dirname(title);
+  var base = node_path.basename(title, ext);
+
+  var ext_name = ext.replace(/^\./, '');
+  var changed_ext = this.ext[ext_name] || ext;
+  return dir + '/' + base + changed_ext;
+};
+
+
+Compiler.prototype._ = function(first_argument) {
+  // body...
 };
 
 
@@ -264,7 +285,7 @@ Compiler.prototype._neuron_config = function() {
       'ranges:'  + JSON.stringify(this.neuron_hashmaps.ranges)  + ',',
       'depTree:' + JSON.stringify(this.neuron_hashmaps.depTree) + ',',
       'path:"' + this.relative_cwd + '"'                        + ',',
-      'ext:"' + this.js_ext + '"',
+      'ext:"' + this.ext.js + '"',
     '});',
     '</script>'
   ].join('');
@@ -272,5 +293,5 @@ Compiler.prototype._neuron_config = function() {
 
 
 Compiler.prototype._normalize = function(name, version) {
-  return node_path.join(this.relative_cwd, name, version, name + this.js_ext);
+  return node_path.join(this.relative_cwd, name, version, name + this.ext.js);
 };
