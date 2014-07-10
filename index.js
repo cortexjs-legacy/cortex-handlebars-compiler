@@ -31,6 +31,7 @@ function Compiler (options) {
   this._check_option(options, 'cwd');
   this._check_option(options, 'path');
   this._check_option(options, 'tree');
+  this._check_option(options, 'shrinkwrap');
 
   this.ext = {
     js: '.js',
@@ -111,7 +112,7 @@ Compiler.prototype._facade_handler = function(title, options) {
   output += [
     '<script>',
       'facade({',
-        'mod:"' + this._facade_mod(title) + '"',
+        'entry:"' + this._facade_mod(title) + '"',
       '});',
     '</script>'
   ].join('');
@@ -148,11 +149,6 @@ Compiler.prototype._static_handler = function(title, options) {
   var ext_name = ext.replace(/^\./, '');
   var changed_ext = this.ext[ext_name] || ext;
   return dir + '/' + base + changed_ext;
-};
-
-
-Compiler.prototype._ = function(first_argument) {
-  // body...
 };
 
 
@@ -226,10 +222,10 @@ Compiler.prototype._facade_mod = function(title) {
     return pkg.format(obj);
   }
 
-  // 'a' -> 'a@latest'
-  obj.range = obj.range || 'latest';
+  // 'a' -> 'a@*'
+  obj.range = obj.range || '*';
 
-  var is_range_valid = semver.validRange(obj.range) || obj.range === 'latest';
+  var is_range_valid = semver.validRange(obj.range) || obj.range === '*';
 
   var facade_pkg = pkg.format({
     name: obj.name,
@@ -243,19 +239,11 @@ Compiler.prototype._facade_mod = function(title) {
     );
   }
 
-  // parse ranges
-  obj.version = this._parse_range(obj.name, obj.range);
-  if (!obj.version) {
-    throw new Error('Facade: invalid range "' + facade_pkg + '", make sure your have `cortex install --save` it.');
-  }
+  var ext = obj.path
+    ? '.js'
+    : '';
 
-  return pkg.format(obj);
-};
-
-
-Compiler.prototype._parse_range = function(name, range) {
-  var ranges = this.neuron_hashmaps.ranges;
-  return ranges[name] && ranges[name][range];
+  return pkg.format(obj) + ext;
 };
 
 
@@ -264,16 +252,28 @@ Compiler.prototype._neuron_framework = function() {
 };
 
 
+Compiler.prototype._get_engines = function() {
+  var engines = [];
+  var es = this.shrinkwrap.engines || {};
+  Object.keys(es).forEach(function (name) {
+    engines.push({
+      name: name,
+      version: es[name].version
+    });
+  });
+
+  return engines;
+};
+
+
 Compiler.prototype._output_engines = function() {
-  return '';
-  // var self = this;
-  // return this.neuron_hashmaps
-  // .engines(this.pkg.name, this.pkg.version)
-  // .map(function (engine) {
-  //   var src = self._normalize(engine.name, engine.version);
-  //   return '<script src="' + src + '"></script>';
-  // })
-  // .join('');
+  var self = this;
+
+  return this._get_engines().map(function (engine) {
+    var src = self._normalize(engine.name, engine.version);
+    return '<script src="' + src + '"></script>';
+  })
+  .join('');
 };
 
 
