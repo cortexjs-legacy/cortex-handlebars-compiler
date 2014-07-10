@@ -1,6 +1,6 @@
 {
   "name": "cortex-handlebars-compiler",
-  "version": "0.2.5",
+  "version": "1.0.0",
   "description": "Handlebar helpers for cortex template.",
   "main": "index.js",
   "scripts": {
@@ -33,9 +33,9 @@
   },
   "dependencies": {
     "handlebars": "^2.0.0-alpha.4",
-    "shrinked": "^0.1.2",
-    "neuron-hashmaps": "^1.1.0",
+    "neuron-pkg": "^0.1.0",
+    "neuron-tree": "^2.0.4",
     "semver": "^2.3.0",
-    "neuron-pkg": "^0.1.0"
+    "shrinked": "^0.1.2"
   }
 }

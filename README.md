@@ -27,7 +27,6 @@ A single compiler instance only cares about one template file.
   - shrinkWrap `Object` object of cortex-shrinkwrap.json
   - cwd `path` the root directories of current project.
   - path `path` path of the current template file
-  - ext `String='.js'` the extension of module files, default to `'.js'`
   - href_root `url` the url base of the hyper reference, `'efte://efte'` for example.
 
 ### .compile(template)
@@ -57,21 +56,7 @@ Then you will get: (which is beautified)
 <script src="../../../neuron/5.1.0/neuron.min.js"></script>
 <script>
 neuron.config({
-  ranges: {
-    "jquery": {
-      "~1.9.2": "1.9.2"
-    },
-    "neuron": {
-      "latest": "5.1.0"
-    }
-  },
-  depTree: {
-    "cortex-hybrid-sample": {
-      "0.1.0": [{
-        "jquery": "~1.9.2"
-      }, {}]
-    }
-  },
+  ranges: tree
   path: "../../../"
 });
 </script>

@@ -3,7 +3,6 @@
 module.exports = compiler;
 
 var handlebars = require('handlebars');
-var hashmaps = require('neuron-hashmaps');
 var node_path = require('path');
 var semver = require('semver');
 var pkg = require('neuron-pkg');
@@ -23,18 +22,19 @@ function compiler (options) {
 // - cwd `path` the root directories of current project.
 // - path `path` path of the current template file
 // X - built_root `path` the root directories of packages to be built into
-// - ext `String='.js'` the extension of module files, default to `'.js'`
+// X - js_ext `String='.js'` the extension of module files, default to `'.js'`
+// X - css_ext
 function Compiler (options) {
   this.facade_counter = 0;
 
   this._check_option(options, 'pkg');
-  this._check_option(options, 'shrinkWrap');
   this._check_option(options, 'cwd');
   this._check_option(options, 'path');
+  this._check_option(options, 'tree');
 
   this.ext = {
-    js: options.js_ext || '.js',
-    css: options.css_ext || '.css'
+    js: '.js',
+    css: '.css'
   };
 
   this.href_root = options.href_root;
@@ -56,8 +56,6 @@ function Compiler (options) {
   this.dir = node_path.dirname(this.path);
   var to_cwd = node_path.relative(this.dir, this.cwd);
   this.relative_cwd = node_path.join('..', '..', to_cwd);
-
-  this.neuron_hashmaps = hashmaps(options.shrinkWrap);
 
   this.helpers = {};
   this.register('facade', this._facade_handler, this);
@@ -282,10 +280,8 @@ Compiler.prototype._neuron_config = function() {
   return '' + [
     '<script>',
     'neuron.config({',
-      'ranges:'  + JSON.stringify(this.neuron_hashmaps.ranges)  + ',',
-      'depTree:' + JSON.stringify(this.neuron_hashmaps.depTree) + ',',
-      'path:"' + this.relative_cwd + '"'                        + ',',
-      'ext:"' + this.ext.js + '"',
+      'tree:' + JSON.stringify(this.tree) + ',',
+      'path:"' + this.relative_cwd + '"'  + ',',
     '});',
     '</script>'
   ].join('');
