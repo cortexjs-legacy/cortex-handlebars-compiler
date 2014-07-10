@@ -265,14 +265,15 @@ Compiler.prototype._neuron_framework = function() {
 
 
 Compiler.prototype._output_engines = function() {
-  var self = this;
-  return this.neuron_hashmaps
-  .engines(this.pkg.name, this.pkg.version)
-  .map(function (engine) {
-    var src = self._normalize(engine.name, engine.version);
-    return '<script src="' + src + '"></script>';
-  })
-  .join('');
+  return '';
+  // var self = this;
+  // return this.neuron_hashmaps
+  // .engines(this.pkg.name, this.pkg.version)
+  // .map(function (engine) {
+  //   var src = self._normalize(engine.name, engine.version);
+  //   return '<script src="' + src + '"></script>';
+  // })
+  // .join('');
 };
 
 
