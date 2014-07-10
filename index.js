@@ -213,13 +213,17 @@ Compiler.prototype._facade_mod = function(title) {
   }
 
   var obj = pkg(title);
+  var ext = obj.path
+    ? '.js'
+    : '';
+
   // if the facade uses the current package, force the version
   if (obj.name === name) {
     obj.version = version;
   }
 
   if (obj.version) {
-    return pkg.format(obj);
+    return pkg.format(obj) + ext;
   }
 
   // 'a' -> 'a@*'
@@ -238,10 +242,6 @@ Compiler.prototype._facade_mod = function(title) {
       'Or you might as well specify the explicit version of "' + facade_name + '".'
     );
   }
-
-  var ext = obj.path
-    ? '.js'
-    : '';
 
   return pkg.format(obj) + ext;
 };

@@ -34,7 +34,6 @@
   "dependencies": {
     "handlebars": "^2.0.0-alpha.4",
     "neuron-pkg": "^0.1.0",
-    "neuron-tree": "^2.1.0",
     "semver": "^2.3.0",
     "shrinked": "^0.1.2"
   }
