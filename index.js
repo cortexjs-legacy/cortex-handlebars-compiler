@@ -30,7 +30,7 @@ function Compiler (options) {
   this._check_option(options, 'pkg');
   this._check_option(options, 'cwd');
   this._check_option(options, 'path');
-  this._check_option(options, 'tree');
+  this._check_option(options, 'graph');
   this._check_option(options, 'shrinkwrap');
 
   this.ext = {
@@ -281,7 +281,7 @@ Compiler.prototype._neuron_config = function() {
   return '' + [
     '<script>',
     'neuron.config({',
-      'tree:' + JSON.stringify(this.tree) + ',',
+      'graph:' + JSON.stringify(this.graph) + ',',
       'path:"' + this.relative_cwd + '"'  + ',',
     '});',
     '</script>'
