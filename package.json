@@ -1,6 +1,6 @@
 {
   "name": "cortex-handlebars-compiler",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Handlebar helpers for cortex template.",
   "main": "index.js",
   "scripts": {
@@ -18,7 +18,7 @@
     "tags"
   ],
   "engines": {
-    "node": ">=0.11.0"
+    "node": ">=0.10.0"
   },
   "author": "kael",
   "license": "MIT",
