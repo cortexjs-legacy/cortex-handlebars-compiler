@@ -57,7 +57,6 @@ function Compiler (options) {
   this.dir = node_path.dirname(this.path);
   var to_cwd = node_path.relative(this.dir, this.cwd);
   this.relative_cwd = node_path.join('..', '..', to_cwd);
-
   this.helpers = {};
   this.register('facade', this._facade_handler, this);
   this.register('href', this._href_handler, this);
@@ -276,13 +275,16 @@ Compiler.prototype._output_engines = function() {
   .join('');
 };
 
+Compiler.prototype._to_url_path = function(path){
+  return path.replace(/\\/g,'\/')
+}
 
 Compiler.prototype._neuron_config = function() {
   return '' + [
     '<script>',
     'neuron.config({',
       'graph:' + JSON.stringify(this.graph) + ',',
-      'path:"' + this.relative_cwd + '"'  + ',',
+      'path:"' + this._to_url_path(this.relative_cwd) + '"'  + ',',
     '});',
     '</script>'
   ].join('');
@@ -290,5 +292,6 @@ Compiler.prototype._neuron_config = function() {
 
 
 Compiler.prototype._normalize = function(name, version) {
-  return node_path.join(this.relative_cwd, name, version, name + this.ext.js);
+  var path = node_path.join(this.relative_cwd, name, version, name + this.ext.js)
+  return this._to_url_path(path);
 };
