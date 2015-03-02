@@ -12,7 +12,7 @@ function compiler (options) {
   return new Compiler(options || {});
 }
 
-// @param {Object} options basic information of the template, not userdata. 
+// @param {Object} options basic information of the template, not userdata.
 // Including:
 // - information of the template
 // - global configurations of the environment
@@ -39,6 +39,9 @@ function Compiler (options) {
   };
 
   this.href_root = options.href_root;
+  this.hosts = options.hosts;
+  this.mod_root = options.mod_root;
+  this.html_root = options.html_root;
 
   if (this.href_root) {
     this.href_root = this.href_root.replace(/\/+$/, '');
@@ -92,7 +95,7 @@ Compiler.prototype.register = function(helper, handler, context) {
 // Comple the template
 Compiler.prototype.compile = function(template) {
   // `handlebars` is a singleton,
-  // we need to override helpers whenever we execute `handlebars.compile` 
+  // we need to override helpers whenever we execute `handlebars.compile`
   Object.keys(this.helpers).forEach(function (helper) {
     var handler = this.helpers[helper];
     handlebars.registerHelper(helper, handler);
@@ -139,6 +142,21 @@ Compiler.prototype._href_handler = function(title, options) {
   return link;
 };
 
+Compiler.prototype._resolve_path = function(path){
+  var root = this.mod_root + this.html_root;
+  var hosts = this.hosts;
+
+  var absolute_path = node_path.join(root, path);
+
+  if(root && hosts){
+    path = "//" + hosts[ absolute_path.length % hosts.length ] + absolute_path;
+  }else{
+    path = path;
+  }
+
+  return this._to_url_path(path);
+}
+
 
 Compiler.prototype._static_handler = function(title, options) {
   var ext = node_path.extname(title);
@@ -147,7 +165,10 @@ Compiler.prototype._static_handler = function(title, options) {
 
   var ext_name = ext.replace(/^\./, '');
   var changed_ext = this.ext[ext_name] || ext;
-  return dir + '/' + base + changed_ext;
+
+  var absolute = this._resolve_path(dir + '/' + base + changed_ext);
+
+  return absolute;
 };
 
 
@@ -276,7 +297,7 @@ Compiler.prototype._output_engines = function() {
 };
 
 Compiler.prototype._to_url_path = function(path){
-  return path.replace(/\\/g,'\/')
+  return path.replace(/\\/g,'\/');
 }
 
 Compiler.prototype._neuron_config = function() {
@@ -284,7 +305,7 @@ Compiler.prototype._neuron_config = function() {
     '<script>',
     'neuron.config({',
       'graph:' + JSON.stringify(this.graph) + ',',
-      'path:"' + this._to_url_path(this.relative_cwd) + '"'  + ',',
+      'path:"' + this._resolve_path(this.relative_cwd) + '"'  + ',',
     '});',
     '</script>'
   ].join('');
@@ -293,5 +314,5 @@ Compiler.prototype._neuron_config = function() {
 
 Compiler.prototype._normalize = function(name, version) {
   var path = node_path.join(this.relative_cwd, name, version, name + this.ext.js)
-  return this._to_url_path(path);
+  return this._resolve_path(path);
 };
