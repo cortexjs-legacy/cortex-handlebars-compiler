@@ -305,7 +305,7 @@ Compiler.prototype._neuron_config = function() {
     '<script>',
     'neuron.config({',
       'graph:' + JSON.stringify(this.graph) + ',',
-      'path:"' + this._resolve_path(this.relative_cwd) + '"'  + ',',
+      'path:"' + this._resolve_path(this.relative_cwd) + '"',
     '});',
     '</script>'
   ].join('');
