@@ -147,7 +147,7 @@ Compiler.prototype._resolve_path = function(path, hash){
   var hosts = this.hosts;
 
   var absolute_path = node_path.join(root, path);
-
+  var host;
   if(root && hosts){
     host = hosts[absolute_path.length % hosts.length];
     if (hash) {
