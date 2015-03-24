@@ -142,14 +142,20 @@ Compiler.prototype._href_handler = function(title, options) {
   return link;
 };
 
-Compiler.prototype._resolve_path = function(path){
+Compiler.prototype._resolve_path = function(path, hash){
   var root = this.mod_root + this.html_root;
   var hosts = this.hosts;
 
   var absolute_path = node_path.join(root, path);
 
   if(root && hosts){
-    path = "//" + hosts[ absolute_path.length % hosts.length ] + absolute_path;
+    host = hosts[absolute_path.length % hosts.length];
+    if (hash) {
+      var frag = host.split(".");
+      frag[0] = frag[0].replace(/\d/, "{n}");
+      host = frag.join(".");
+    }
+    path = "//" + host + absolute_path;
   }else{
     path = path;
   }
@@ -305,7 +311,7 @@ Compiler.prototype._neuron_config = function() {
     '<script>',
     'neuron.config({',
       'graph:' + JSON.stringify(this.graph) + ',',
-      'path:"' + this._resolve_path(this.relative_cwd) + '"',
+      'path:"' + this._resolve_path(this.relative_cwd, true) + '"',
     '});',
     '</script>'
   ].join('');
