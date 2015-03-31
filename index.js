@@ -41,6 +41,7 @@ function Compiler (options) {
   this.href_root = options.href_root;
   this.hosts = options.hosts;
   this.mod_root = options.mod_root;
+  this.template_dir = options.template_dir;
   this.html_root = options.html_root;
 
   if (this.href_root) {
@@ -143,11 +144,24 @@ Compiler.prototype._href_handler = function(title, options) {
 };
 
 Compiler.prototype._resolve_path = function(path, hash){
-  var root = this.mod_root + this.html_root;
-  var hosts = this.hosts;
+  var root, hosts, host, absolute_path;
+  var html_filepath, origin_html_path;
 
-  var absolute_path = node_path.join(root, path);
-  var host;
+  hosts = this.hosts
+  if(this.template_dir){
+    // new logic with template_dir
+    root = this.mod_root;
+
+    html_filepath = node_path.relative(this.template_dir, this.path);
+
+    origin_html_path = node_path.join(root, html_filepath);
+    absolute_path = node_path.join(origin_html_path, path);
+  }else{
+    // old dirty logic for compatibility
+    root = this.mod_root + this.html_root;
+    absolute_path = node_path.join(root, path);
+  }
+
   if(root && hosts){
     host = hosts[absolute_path.length % hosts.length];
     if (hash) {
