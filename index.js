@@ -43,6 +43,7 @@ function Compiler (options) {
   this.mod_root = options.mod_root;
   this.template_dir = options.template_dir;
   this.html_root = options.html_root;
+  this.hash_host = options.hash_host === false ? false : true;
 
   if (this.href_root) {
     this.href_root = this.href_root.replace(/\/+$/, '');
@@ -147,23 +148,30 @@ Compiler.prototype._resolve_path = function(path, hash){
   var root, hosts, host, absolute_path;
   var html_filepath, origin_html_path;
 
-  hosts = this.hosts
+  hosts = this.hosts;
   if(this.template_dir){
     // new logic with template_dir
     root = this.mod_root;
-
     html_filepath = node_path.relative(this.template_dir, this.path);
-
-    origin_html_path = node_path.join(root, html_filepath);
-    absolute_path = node_path.join(origin_html_path, path);
+    root = node_path.join(root, html_filepath);
   }else{
     // old dirty logic for compatibility
     root = this.mod_root + this.html_root;
+  }
+
+
+  if(this._is_absolute(path)){
+    absolute_path = path;
+  }else{
     absolute_path = node_path.join(root, path);
   }
 
   if(root && hosts){
-    host = hosts[absolute_path.length % hosts.length];
+    if(this.hash_host){
+      host = hosts[absolute_path.length % hosts.length];
+    }else{
+      host = hosts[0];
+    }
     if (hash) {
       var frag = host.split(".");
       frag[0] = frag[0].replace(/\d/, "{n}");
@@ -177,6 +185,9 @@ Compiler.prototype._resolve_path = function(path, hash){
   return this._to_url_path(path);
 }
 
+Compiler.prototype._is_absolute = function(title){
+  return title.indexOf("/") == 0;
+};
 
 Compiler.prototype._static_handler = function(title, options) {
   var ext = node_path.extname(title);
@@ -185,10 +196,13 @@ Compiler.prototype._static_handler = function(title, options) {
 
   var ext_name = ext.replace(/^\./, '');
   var changed_ext = this.ext[ext_name] || ext;
-
-  var absolute = this._resolve_path(dir + '/' + base + changed_ext);
-
-  return absolute;
+  var url_path;
+  if(this._is_absolute(title)){
+    url_path = title;
+  }else{
+    url_path = dir + '/' + base + changed_ext;
+  }
+  return this._resolve_path(url_path);
 };
 
 
@@ -325,7 +339,7 @@ Compiler.prototype._neuron_config = function() {
     '<script>',
     'neuron.config({',
       'graph:' + JSON.stringify(this.graph) + ',',
-      'path:"' + this._resolve_path(this.relative_cwd, true) + '"',
+      'path:"' + this._resolve_path(this.relative_cwd, this.hash_host) + '"',
     '});',
     '</script>'
   ].join('');
