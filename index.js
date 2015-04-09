@@ -45,6 +45,9 @@ function Compiler (options) {
   this.html_root = options.html_root;
   this.hash_host = options.hash_host === false ? false : true;
 
+  // for compatibility of old pattern
+  this.mod_root = this.mod_root.replace('/' + this.pkg.name + "/" + this.pkg.version, "");
+
   if (this.href_root) {
     this.href_root = this.href_root.replace(/\/+$/, '');
   }
@@ -66,6 +69,7 @@ function Compiler (options) {
   this.register('facade', this._facade_handler, this);
   this.register('href', this._href_handler, this);
   this.register('static', this._static_handler, this);
+  this.register('modfile', this._modfile_handler, this);
 }
 
 
@@ -106,6 +110,54 @@ Compiler.prototype.compile = function(template) {
   return handlebars.compile(template);
 };
 
+Compiler.prototype._retrieve_all_versions = function(){
+  var versions_cache = {};
+  function digdeps(k, node){
+    if(!versions_cache[k]){
+      versions_cache[k] = [node.version];
+    }else{
+      if(versions_cache[k].indexOf(node.version) == -1){
+        versions_cache[k].push(node.version);
+      }
+    }
+
+    var deps = node.dependencies;
+    if(deps){
+      for(var name in deps){
+        digdeps(name, deps[name]);
+      }
+    }
+  }
+
+
+  if(this._versions_cache){
+    return this._versions_cache;
+  }else{
+    digdeps(this.shrinkwrap.name, this.shrinkwrap);
+    this._versions_cache = versions_cache;
+    return versions_cache;
+  }
+}
+
+Compiler.prototype._modfile_handler = function(title, options) {
+  var versions = this._retrieve_all_versions();
+  var obj = pkg(title);
+  var name = obj.name;
+  var range = obj.range || '*';
+  var path = obj.path;
+  var version = semver.maxSatisfying(versions[name], range);
+
+  if(path == ''){
+    path = name + '.js';
+  }
+  if(path.indexOf('/') == 0){
+    path = path.slice(1);
+  }
+  var base = this.hosts ? this.mod_root : this._resolve_path(this.relative_cwd, this.hash_host);
+
+  path = node_path.join(base , name, version, path).replace(/\\/g,'/');
+  return this._resolve_path(path);
+};
 
 Compiler.prototype._facade_handler = function(title, options) {
   var output = '';
@@ -151,13 +203,14 @@ Compiler.prototype._resolve_path = function(path, hash){
   hosts = this.hosts;
   if(this.template_dir){
     // new logic with template_dir
-    root = this.mod_root;
+    root = node_path.join(this.mod_root, this.pkg.name, this.pkg.version).replace(/\\/g,'/');
     html_filepath = node_path.relative(this.template_dir, this.path);
     root = node_path.join(root, html_filepath);
   }else{
     // old dirty logic for compatibility
-    root = this.mod_root + this.html_root;
+    root = this.mod_root + '/' + this.pkg.name + '/' + this.pkg.version + this.html_root;
   }
+
 
 
   if(this._is_absolute(path)){
