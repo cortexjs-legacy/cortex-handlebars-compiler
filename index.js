@@ -47,6 +47,7 @@ function Compiler (options) {
   this.template_dir = options.template_dir;
   this.html_root = options.html_root;
   this.hash_host = options.hash_host === false ? false : true;
+  this.versions = this._retrieve_all_versions();
 
   /**
    * {
@@ -185,7 +186,7 @@ Compiler.prototype._retrieve_all_versions = function(){
  * {{{modfile '<modname>[@<modversion>]/<filepath>'}}}
  */
 Compiler.prototype._modfile_handler = function(title, options) {
-  var versions = this._retrieve_all_versions();
+  var versions = this.version;
   var obj = pkg(title);
   var name = obj.name;
   var range = obj.range || '*';
@@ -255,7 +256,7 @@ Compiler.prototype._href_handler = function(title, options) {
  */
 Compiler.prototype._append_md5_to_absolute_path = function(absolute_path){
   var file_hash = this.file_hash;
-  var hash = file_hash[absolute_path];
+  var hash = file_hash && file_hash[absolute_path];
 
   if(!hash){
     return absolute_path;
@@ -465,7 +466,7 @@ Compiler.prototype._retrieve_hashes = function(){
   var facades = this.facades;
   var built_root = this.built_root;
   var hash = {};
-  var versions = this._retrieve_all_versions();
+  var versions = this.versions;
 
   if(!facades){
     return null;
@@ -477,6 +478,9 @@ Compiler.prototype._retrieve_hashes = function(){
     var range = mod.split("@")[1] || "*";
     var version = semver.maxSatisfying(versions[name], range);
     var id = mod+"@"+version;
+    if(!version){
+      throw new Error("No verify version found for " + name + "@" + range);
+    }
     if(!hash[id]){
       var path = node_path.join(built_root,name,version,'md5.json');
       var exists = fs.existsSync(path);
