@@ -7,6 +7,7 @@ var node_path = require('path');
 var semver = require('semver');
 var pkg = require('neuron-pkg');
 var node_url = require('url');
+var fs = require('fs');
 
 function compiler (options) {
   return new Compiler(options || {});
@@ -21,7 +22,7 @@ function compiler (options) {
 // - shrinkWrap `Object` object of cortex-shrinkwrap.json
 // - cwd `path` the root directories of current project.
 // - path `path` path of the current template file
-// X - built_root `path` the root directories of packages to be built into
+// - built_root `path` the root directories of packages to be built into
 // X - js_ext `String='.js'` the extension of module files, default to `'.js'`
 // X - css_ext
 function Compiler (options) {
@@ -38,12 +39,31 @@ function Compiler (options) {
     css: '.css'
   };
 
+  this.built_root = node_path.join(this.cwd, process.env.CORTEX_DEST || 'neurons');
+  this.facades = options.facades;
   this.href_root = options.href_root;
   this.hosts = options.hosts;
   this.mod_root = options.mod_root;
   this.template_dir = options.template_dir;
   this.html_root = options.html_root;
   this.hash_host = options.hash_host === false ? false : true;
+
+  /**
+   * {
+   *   "a@0.1.0":{
+   *     "a.js": "a9e2d1b6",
+   *     "b.js": "d1b6a9e2"
+   *   }
+   * }
+   */
+  this.neuron_hash = this._retrieve_hashes();
+  /**
+   * {
+   *   "mod/a/0.1.0/a.js": "a9e2d1b6"
+   *   "mod/a/0.1.0/b.js": "d1b6a9e2"
+   * }
+   */
+  this.file_hash = this._parse_file_hash(this.neuron_hash);
 
   // for compatibility of old pattern
   this.mod_root = this.mod_root.replace('/' + this.pkg.name + "/" + this.pkg.version, "");
@@ -110,6 +130,28 @@ Compiler.prototype.compile = function(template) {
   return handlebars.compile(template);
 };
 
+/**
+ * neuron_hash format -> file_hash format
+ */
+Compiler.prototype._parse_file_hash = function(neuron_hash){
+  if(!neuron_hash){
+    return null;
+  }
+
+  var file_hash = {};
+  for(var facade in neuron_hash){
+    var facade_hash_list = neuron_hash[facade];
+    for(var file in facade_hash_list){
+      var file_path = node_path.join(this.mod_root, facade.replace("@","/"), file);
+      file_hash[file_path] = facade_hash_list[file];
+    }
+  }
+  return file_hash;
+}
+
+/**
+ * retrieve all versions from this.shrinkwrap
+ */
 Compiler.prototype._retrieve_all_versions = function(){
   var versions_cache = {};
   function digdeps(k, node){
@@ -139,6 +181,9 @@ Compiler.prototype._retrieve_all_versions = function(){
   }
 }
 
+/**
+ * {{{modfile '<modname>[@<modversion>]/<filepath>'}}}
+ */
 Compiler.prototype._modfile_handler = function(title, options) {
   var versions = this._retrieve_all_versions();
   var obj = pkg(title);
@@ -203,13 +248,32 @@ Compiler.prototype._href_handler = function(title, options) {
   return link;
 };
 
+/**
+ * mod/<name>/<version>/<file>.<ext>
+ * ->
+ * mod/<name>/<version>/<file>_<md5>.<ext>
+ */
+Compiler.prototype._append_md5_to_absolute_path = function(absolute_path){
+  var file_hash = this.file_hash;
+  var hash = file_hash[absolute_path];
+
+  if(!hash){
+    return absolute_path;
+  }else{
+    var ext = node_path.extname(absolute_path);
+    var base = absolute_path.split(ext)[0];
+    return base + "_" + hash + ext;
+  }
+};
+
 Compiler.prototype._resolve_path = function(path, hash){
   var root, hosts, host, absolute_path;
   var html_filepath, origin_html_path;
-
+  var is_new_logic = false;
   hosts = this.hosts;
   if(this.template_dir){
     // new logic with template_dir
+    is_new_logic = true;
     root = node_path.join(this.mod_root, this.pkg.name, this.pkg.version).replace(/\\/g,'/');
     html_filepath = node_path.relative(this.template_dir, this.path);
     root = node_path.join(root, html_filepath);
@@ -226,6 +290,9 @@ Compiler.prototype._resolve_path = function(path, hash){
     absolute_path = node_path.join(root, path);
   }
 
+  if(is_new_logic){
+    absolute_path = this._append_md5_to_absolute_path(absolute_path);
+  }
   if(root && hosts){
     if(this.hash_host){
       host = hosts[absolute_path.length % hosts.length];
@@ -394,13 +461,58 @@ Compiler.prototype._to_url_path = function(path){
   return path.replace(/\\/g,'\/');
 }
 
+Compiler.prototype._retrieve_hashes = function(){
+  var facades = this.facades;
+  var built_root = this.built_root;
+  var hash = {};
+  var versions = this._retrieve_all_versions();
+
+  if(!facades){
+    return null;
+  }
+
+  facades.forEach(function(facade){
+    var mod = facade.split("/")[0];
+    var name = mod.split("@")[0];
+    var range = mod.split("@")[1] || "*";
+    var version = semver.maxSatisfying(versions[name], range);
+    var id = mod+"@"+version;
+    if(!hash[id]){
+      var path = node_path.join(built_root,name,version,'md5.json');
+      var exists = fs.existsSync(path);
+      if(exists){
+        var content = fs.readFileSync(path);
+        var json;
+        try{
+          json = JSON.parse(content);
+        }catch(e){}
+        if(json){
+          hash[id] = json;
+        }
+      }
+    }
+  });
+
+  if(Object.keys(hash).length){
+    return hash;
+  }else{
+    return null;
+  }
+}
+
 Compiler.prototype._neuron_config = function() {
+  var config = {};
+  config.graph = this.graph;
+  config.path = this._resolve_path(this.relative_cwd, this.hash_host);
+
+  var hash = this.neuron_hash;
+
+  if(hash){
+    config.hash = hash;
+  }
   return '' + [
     '<script>',
-    'neuron.config({',
-      'graph:' + JSON.stringify(this.graph) + ',',
-      'path:"' + this._resolve_path(this.relative_cwd, this.hash_host) + '"',
-    '});',
+    'neuron.config(' + JSON.stringify(config) + ');',
     '</script>'
   ].join('');
 };
