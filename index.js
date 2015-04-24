@@ -187,7 +187,7 @@ Compiler.prototype._retrieve_all_versions = function(){
  * {{{modfile '<modname>[@<modversion>]/<filepath>'}}}
  */
 Compiler.prototype._modfile_handler = function(title, options) {
-  var versions = this.version;
+  var versions = this.versions;
   var obj = pkg(title);
   var name = obj.name;
   var range = obj.range || '*';
