@@ -48,6 +48,7 @@ function Compiler (options) {
   this.html_root = options.html_root;
   this.hash_host = options.hash_host === false ? false : true;
   this.versions = this._retrieve_all_versions();
+  this.enable_md5 = !!process.env.CORTEX_HANDLEBAR_COMPILER_ENABLE_MD5 || false;
 
   /**
    * {
@@ -258,7 +259,7 @@ Compiler.prototype._append_md5_to_absolute_path = function(absolute_path){
   var file_hash = this.file_hash;
   var hash = file_hash && file_hash[absolute_path];
 
-  if(!hash){
+  if(!hash || !this.enable_md5){
     return absolute_path;
   }else{
     var ext = node_path.extname(absolute_path);
@@ -511,7 +512,7 @@ Compiler.prototype._neuron_config = function() {
 
   var hash = this.neuron_hash;
 
-  if(hash){
+  if(hash && this.enable_md5){
     config.hash = hash;
   }
   return '' + [
