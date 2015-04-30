@@ -8,6 +8,7 @@ var semver = require('semver');
 var pkg = require('neuron-pkg');
 var node_url = require('url');
 var fs = require('fs');
+var moment = require('moment');
 
 function compiler (options) {
   return new Compiler(options || {});
@@ -95,8 +96,18 @@ function Compiler (options) {
   this.register('href', this._href_handler, this);
   this.register('static', this._static_handler, this);
   this.register('modfile', this._modfile_handler, this);
+  this.register('timestamp', this._timestamp_handler, this);
+  this.register('timestr', this._timestr_handler, this);
 }
 
+Compiler.prototype._timestamp_handler = function(){
+  return +new Date;
+};
+
+Compiler.prototype._timestr_handler = function(){
+  var now = new Date();
+  return moment().format('YYYY-MM-DD HH:mm:ss');
+};
 
 Compiler.prototype._check_option = function(options, key, message) {
   if (!message) {
