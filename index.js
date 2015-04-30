@@ -50,6 +50,9 @@ function Compiler (options) {
   this.versions = this._retrieve_all_versions();
   this.enable_md5 = !!process.env.CORTEX_HANDLEBAR_COMPILER_ENABLE_MD5 || false;
 
+  if(!this.facades || !this.facades.length){
+    this.facades = [this.pkg.name];
+  }
   /**
    * {
    *   "a@0.1.0":{
