@@ -1,6 +1,6 @@
 {
   "name": "cortex-handlebars-compiler",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "description": "Handlebar helpers for cortex template.",
   "main": "index.js",
   "scripts": {

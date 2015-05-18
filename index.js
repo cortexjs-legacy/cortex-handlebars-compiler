@@ -97,8 +97,26 @@ function Compiler (options) {
   this.register('static', this._static_handler, this);
   this.register('modfile', this._modfile_handler, this);
   this.register('timestamp', this._timestamp_handler, this);
+  this.register('combo', this._combo_handler, this);
   this.register('timestr', this._timestr_handler, this);
 }
+
+Compiler.prototype._combo_handler = function(title, options){
+  var self = this;
+  var mods = title.split(",");
+  var base = "/concat/";
+
+  var paths = [];
+  mods.forEach(function(mod){
+    var path = self._mod_file_path(mod, options);
+    paths.push(path);
+  });
+
+  var final_path = base + paths.map(function(path){
+    return path.replace(/\//g,"~");
+  }).join(",");
+  return self._resolve_path(final_path);
+};
 
 Compiler.prototype._timestamp_handler = function(){
   return +new Date;
@@ -200,7 +218,7 @@ Compiler.prototype._retrieve_all_versions = function(){
 /**
  * {{{modfile '<modname>[@<modversion>]/<filepath>'}}}
  */
-Compiler.prototype._modfile_handler = function(title, options) {
+Compiler.prototype._mod_file_path = function(title) {
   var versions = this.versions;
   var obj = pkg(title);
   var name = obj.name;
@@ -223,9 +241,14 @@ Compiler.prototype._modfile_handler = function(title, options) {
   }
   var base = this.hosts ? this.mod_root : this._resolve_path(this.relative_cwd, this.hash_host);
 
-  path = node_path.join(base , name, version, path).replace(/\\/g,'/');
-  return this._resolve_path(path);
+  return node_path.join(base , name, version, path).replace(/\\/g,'/');
 };
+
+Compiler.prototype._modfile_handler = function(title, options){
+
+  var path = this._mod_file_path(title);
+  return this._resolve_path(path);
+}
 
 Compiler.prototype._facade_handler = function(title, options) {
   var output = '';
