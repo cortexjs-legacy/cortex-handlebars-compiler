@@ -73,6 +73,8 @@ function Compiler (options) {
 
   // for compatibility of old pattern
   this.mod_root = this.mod_root.replace('/' + this.pkg.name + "/" + this.pkg.version, "");
+  this.root = this._resolve_root();
+  this.is_new_logic = !!this.template_dir || false;
 
   if (this.href_root) {
     this.href_root = this.href_root.replace(/\/+$/, '');
@@ -108,7 +110,13 @@ Compiler.prototype._combo_handler = function(title, options){
 
   var paths = [];
   mods.forEach(function(mod){
-    var path = self._mod_file_path(mod, options);
+    var path;
+    if(mod.indexOf('.') == 0){
+      path = self._static_path(mod);
+      path = self._to_absolute_path(path);
+    }else{
+      path = self._mod_file_path(mod);
+    }
     paths.push(path);
   });
 
@@ -239,7 +247,7 @@ Compiler.prototype._mod_file_path = function(title) {
   if(path.indexOf('/') == 0){
     path = path.slice(1);
   }
-  var base = this.hosts ? this.mod_root : this._resolve_path(this.relative_cwd, this.hash_host);
+  var base = this.hosts ? this.mod_root : this._resolve_path(this.relative_cwd);
 
   return node_path.join(base , name, version, path).replace(/\\/g,'/');
 };
@@ -305,14 +313,9 @@ Compiler.prototype._append_md5_to_absolute_path = function(absolute_path){
   }
 };
 
-Compiler.prototype._resolve_path = function(path, hash){
-  var root, hosts, host, absolute_path;
-  var html_filepath, origin_html_path;
-  var is_new_logic = false;
-  hosts = this.hosts;
+Compiler.prototype._resolve_root = function(){
+  var html_filepath;
   if(this.template_dir){
-    // new logic with template_dir
-    is_new_logic = true;
     root = node_path.join(this.mod_root, this.pkg.name, this.pkg.version).replace(/\\/g,'/');
     html_filepath = node_path.relative(this.template_dir, this.path);
     root = node_path.join(root, html_filepath);
@@ -321,33 +324,45 @@ Compiler.prototype._resolve_path = function(path, hash){
     root = this.mod_root + '/' + this.pkg.name + '/' + this.pkg.version + this.html_root;
   }
 
+  return root;
+}
 
-
+Compiler.prototype._to_absolute_path = function(path){
+  var absolute_path;
   if(this._is_absolute(path)){
     absolute_path = path;
   }else{
     absolute_path = node_path.join(root, path);
   }
 
-  if(is_new_logic){
+  if(this.is_new_logic){
     absolute_path = this._append_md5_to_absolute_path(absolute_path);
   }
-  if(root && hosts){
-    if(this.hash_host){
-      host = hosts[absolute_path.length % hosts.length];
-    }else{
-      host = hosts[0];
-    }
-    if (hash) {
-      var frag = host.split(".");
-      frag[0] = frag[0].replace(/\d/, "{n}");
-      host = frag.join(".");
-    }
-    path = "//" + host + absolute_path;
-  }else{
-    path = path;
-  }
 
+  return absolute_path;
+};
+
+Compiler.prototype._get_host = function(path, hash){
+  var host;
+  var hosts = this.hosts;
+  if(hash){
+    host = hosts[path.length % hosts.length];
+  }else{
+    host = hosts[0];
+  }
+  if (hash) {
+    var frag = host.split(".");
+    frag[0] = frag[0].replace(/\d/, "{n}");
+    host = frag.join(".");
+  }
+  return host;
+}
+
+Compiler.prototype._resolve_path = function(path, hash_host){
+  var absolute_path = this._to_absolute_path(path);
+  if(this.root && this.hosts){
+    path = "//" + this._get_host(absolute_path, hash_host) + absolute_path;
+  }
   return this._to_url_path(path);
 }
 
@@ -356,6 +371,11 @@ Compiler.prototype._is_absolute = function(title){
 };
 
 Compiler.prototype._static_handler = function(title, options) {
+  var url_path = this._static_path(title);
+  return this._resolve_path(url_path);
+};
+
+Compiler.prototype._static_path = function(title){
   var ext = node_path.extname(title);
   var dir = node_path.dirname(title);
   var base = node_path.basename(title, ext);
@@ -368,8 +388,8 @@ Compiler.prototype._static_handler = function(title, options) {
   }else{
     url_path = dir + '/' + base + changed_ext;
   }
-  return this._resolve_path(url_path);
-};
+  return url_path;
+}
 
 
 Compiler.prototype._is_relative = function(path) {
@@ -545,7 +565,7 @@ Compiler.prototype._retrieve_hashes = function(){
 Compiler.prototype._neuron_config = function() {
   var config = {};
   config.graph = this.graph;
-  config.path = this._resolve_path(this.relative_cwd, this.hash_host);
+  config.path = this._resolve_path(this.relative_cwd, true);
 
   var hash = this.neuron_hash;
 
