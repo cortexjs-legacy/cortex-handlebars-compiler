@@ -104,6 +104,7 @@ function Compiler (options) {
 }
 
 Compiler.prototype._combo_handler = function(title, options){
+  if(!title){return '';}
   var self = this;
   var mods = title.split(",");
   var base = "/concat/";
