@@ -101,6 +101,7 @@ function Compiler (options) {
   this.register('timestamp', this._timestamp_handler, this);
   this.register('combo', this._combo_handler, this);
   this.register('timestr', this._timestr_handler, this);
+  this.register('version', this._version_handler, this);
 }
 
 Compiler.prototype._combo_handler = function(title, options){
@@ -110,7 +111,9 @@ Compiler.prototype._combo_handler = function(title, options){
   var base = "/concat/";
 
   var paths = [];
-  mods.forEach(function(mod){
+  mods.filter(function(mod){
+    return mod;
+  }).forEach(function(mod){
     var path;
     if(mod.indexOf('.') == 0){
       path = self._static_path(mod);
@@ -125,6 +128,11 @@ Compiler.prototype._combo_handler = function(title, options){
     return path.replace(/\//g,"~");
   }).join(",");
   return self._resolve_path(final_path);
+};
+
+
+Compiler.prototype._version_handler = function(title, options){
+    return (this.pkg&&this.pkg.version) || "";
 };
 
 Compiler.prototype._timestamp_handler = function(){
